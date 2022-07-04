@@ -4,7 +4,10 @@ Auto post (facebook, more comings for other socials networks) using Pupetter hea
 
 ## Serve Http
 
-node ace serve --watch
+`node ace serve --watch`
+
+## Requirements
+node version v14 and above 
 
 ## Routes
 
