@@ -1,4 +1,4 @@
 import Route from "@ioc:Adonis/Core/Route";
 
-Route.get('/facebook/groups', 'FacebookCrawlersController.groups').as('facebook.groups');
-Route.get('/facebook/groups/post', 'FacebookCrawlersController.post').as('facebook.post');
+Route.post('/facebook/groups', 'FacebookCrawlersController.groups').as('facebook.groups');
+Route.post('/facebook/groups/post', 'FacebookCrawlersController.post').as('facebook.post');
