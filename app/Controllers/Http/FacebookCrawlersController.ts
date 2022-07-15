@@ -3,6 +3,27 @@ import {facebook} from '../../../services/facebook';
 import {rules, schema} from '@ioc:Adonis/Core/Validator'
 
 export default class FacebookCrawlersController {
+  public async checkLogin(ctx: HttpContextContract) {
+
+    const validationRules = schema.create({
+      email: schema.string({}, [
+        rules.email(),
+      ]),
+      password: schema.string(),
+    });
+
+    const payload = await ctx.request.validate({schema: validationRules})
+
+    const flag = await facebook.isAbleToLogin({email: payload.email, password: payload.password});
+
+    await facebook.closeBrowser(facebook.browser);
+
+    return ctx.response.send({
+      status: 'success',
+      data: flag,
+    });
+  }
+
   public async groups(ctx: HttpContextContract) {
 
     const validationRules = schema.create({
@@ -14,8 +35,16 @@ export default class FacebookCrawlersController {
 
     const payload = await ctx.request.validate({schema: validationRules})
 
-    const page = await facebook.login({email: payload.email, password: payload.password});
-    const groups = await facebook.groups(page);
+    const flagLogin = await facebook.login({email: payload.email, password: payload.password});
+
+    if (!flagLogin) {
+      return ctx.response.send({
+        status: 'failed',
+        data: false,
+      });
+    }
+
+    const groups = await facebook.groups(facebook.page);
 
     await facebook.closeBrowser(facebook.browser);
 

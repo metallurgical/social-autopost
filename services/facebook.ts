@@ -2,26 +2,96 @@ import Env from "@ioc:Adonis/Core/Env";
 
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
+import {PageHelper} from './page/helper';
+
+var browserHelper = new PageHelper();
 
 var facebook = {
-  browser: null,
-  async login({email, password, timeout = 6000}) {
-    const browser = await this.launchBrowser();
-    const page = await this.launchPage(browser);
 
-    // Listen to console event
-    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+  browser: null,
+  page: null,
+
+  async login({email, password, timeout = 6000}) {
+    this.browser = await browserHelper.init();
+    this.page = browserHelper.page;
+    await browserHelper.open('https://m.facebook.com');
+
+    await browserHelper.focusElement('#m_login_email');
+    await browserHelper.clearElement('#m_login_email');
+    await browserHelper.sendElementText('#m_login_email', email);
+    await browserHelper.focusElement('#m_login_password');
+    await browserHelper.clearElement('#m_login_password');
+    await browserHelper.sendElementText('#m_login_password', password);
 
     // Set default navigation
-    page.setDefaultNavigationTimeout(timeout);
+    await browserHelper.setDefaultNavigationTimeout(timeout);
+    await browserHelper.clickElement("button[name='login']");
 
-    await page.goto('https://m.facebook.com');
-    await page.type('#m_login_email', email);
-    await page.type('#m_login_password', password);
-    await page.click("button[name='login']");
-    await page.waitForNavigation();
+    let flagNavigationError: boolean = false;
 
-    return page;
+    // Wait for facebook redirect after successful login
+    await browserHelper.waitForNavigation()
+      .catch(() => {
+        flagNavigationError = true;
+      });
+
+    if (flagNavigationError) {
+      let flagForgotPasswordError: boolean = true;
+      let flagHelpFindAccountError: boolean = true;
+      let flagCantFindAccountError: boolean = true;
+
+      await browserHelper
+        .page
+        .waitForXPath('//*[contains(text(), "Did you forget your password?")]', {timeout: 6000}).catch(() => {
+          flagForgotPasswordError = false;
+        });
+
+      if (flagForgotPasswordError) {
+        return false;
+      }
+
+      await browserHelper
+        .page
+        .waitForXPath('//*[contains(text(), "Need help with finding your account?")]', {timeout: 6000})
+        .catch(() => {
+          flagHelpFindAccountError = false;
+        });
+
+      if (flagHelpFindAccountError) {
+        return false;
+      }
+
+      await browserHelper
+        .page
+        .waitForXPath('//*[contains(text(), "Can\'t find account")]', {timeout: 6000}).catch(() => {
+          flagCantFindAccountError = false;
+        });
+
+      if (flagCantFindAccountError) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+
+  async isAbleToLogin({email, password}) {
+    const flagLogin = await this.login({email: email, password: password})
+
+    if (!flagLogin) {
+      return false;
+    }
+
+    await browserHelper.open('https://www.facebook.com/settings/?tab=account');
+    await browserHelper
+      .waitForNavigation()
+      .catch(() => {
+        return false;
+      })
+
+    const url = browserHelper.page.url();
+
+    return url.includes('https://www.facebook.com/settings/?tab=account');
   },
 
   async groups(page) {
