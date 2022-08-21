@@ -15,7 +15,18 @@ class PageHelper {
     this.browser = await launch({
       // headless: true,
       headless: false,
-      args: ['--disable-notifications', '--start-maximized'],
+      args: [
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        '--disable-setuid-sandbox',
+        '--no-first-run',
+        '--no-sandbox',
+        '--no-zygote',
+        '--deterministic-fetch',
+        '--disable-features=IsolateOrigins',
+        // '--single-process',
+        // '--disable-site-isolation-trials',
+      ],
     });
     this.page = await this.browser.newPage();
     if (Env.get('NODE_ENV')  === 'development') {

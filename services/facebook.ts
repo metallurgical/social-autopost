@@ -72,7 +72,7 @@ var facebook = {
       }
     }
 
-    return true;
+    return this.page;
   },
 
   async isAbleToLogin({email, password}) {
@@ -128,7 +128,10 @@ var facebook = {
     if (!groups.length) {
       return false;
     }
-    groups.forEach(async function (elem) {
+
+    for (let index = 0; index < groups.length; ++index) {
+      let elem = groups[index];
+
       // @ts-ignore
       await page.goto(Env.get('FACEBOOK_ENDPOINT') + elem.link);
 
@@ -146,8 +149,44 @@ var facebook = {
         await uploadField.uploadFile(...images);
       }
 
+      // await Promise.all([
       await page.click('form#structured_composer_form + div button[value="Post"]');
-    });
+
+      // Wait for this text appear, if appear means our post is now published (see content if is being reviewed or not)
+      await page
+        .waitForXPath('//*[contains(text(), "Your post is now published")]', {timeout: 6000})
+        .catch(() => {
+          console.log('coundlt find')
+        });
+
+      // page.waitForSelector('[data-sigil="inprogress"]', {visible: false}),
+      // ]);
+      // await page.click('form#structured_composer_form + div button[value="Post"]');
+
+      // await page.waitForResponse(response => response.status() === 200);
+    }
+
+    // Cant use await inside forEach, move to for statement like above
+    // groups.forEach(async function (elem) {
+    //   // @ts-ignore
+    //   await page.goto(Env.get('FACEBOOK_ENDPOINT') + elem.link);
+    //
+    //   // Click trigger button input
+    //   await page.click('.feedRevamp > div:nth-of-type(3) > div > div:nth-of-type(1) > div[role="button"]:nth-of-type(2)');
+    //
+    //   // Wait for textarea visible to page
+    //   await page.waitForSelector(".mentions > textarea.mentions-input", {visible: true});
+    //   //
+    //   // Insert into textarea
+    //   await page.type('.mentions > textarea.mentions-input', message);
+    //
+    //   if (images.length) {
+    //     const uploadField = await page.$('#photo_input');
+    //     await uploadField.uploadFile(...images);
+    //   }
+    //
+    //   await page.click('form#structured_composer_form + div button[value="Post"]');
+    // });
 
     return true;
 

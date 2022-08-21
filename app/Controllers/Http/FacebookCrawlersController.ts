@@ -94,5 +94,10 @@ export default class FacebookCrawlersController {
     });
 
     await facebook.closeBrowser(facebook.browser);
+
+    return ctx.response.status(200).send({
+      status: 'success',
+      message: 'Successfully post into group',
+    })
   }
 }
