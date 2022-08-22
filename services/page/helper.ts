@@ -12,9 +12,14 @@ class PageHelper {
   }
 
   public async init() {
+    let headless = false;
+
+    if (Env.get('NODE_ENV') === 'production' || Env.get('NODE_ENV') === 'development') {
+      headless = true;
+    }
+
     this.browser = await launch({
-      // headless: true,
-      headless: false,
+      headless: headless,
       args: [
         '--disable-gpu',
         '--disable-dev-shm-usage',
