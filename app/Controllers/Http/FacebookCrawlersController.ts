@@ -1,26 +1,54 @@
 import {HttpContextContract} from "@ioc:Adonis/Core/HttpContext";
 import {facebook} from '../../../services/facebook';
 import {rules, schema} from '@ioc:Adonis/Core/Validator'
+// import Redis from "@ioc:Adonis/Addons/Redis";
+import Database from "@ioc:Adonis/Lucid/Database";
 
 export default class FacebookCrawlersController {
-  public async checkLogin(ctx: HttpContextContract) {
+  public async test() {
+    // console.log('trigger from testsocket')
+    // await Redis.set('foo1', 'bar1')
+    // const value = await Redis.get('foo1');
+    //
+    // console.log(value)
+    //
+    // await Redis.publish('autopost_database_user', '1:require_verification_code');
+    let user = await Database
+      .from('users')
+      .select('email')
+      .where('id', 1)
+      .first();
 
+    console.log(user.email);
+    return 'handled';
+  }
+
+  public async checkLogin(ctx: HttpContextContract) {
     const validationRules = schema.create({
       email: schema.string({}, [
         rules.email(),
       ]),
       password: schema.string(),
+      password_replacement: schema.string(),
+      user_id: schema.string(),
     });
 
-    const payload = await ctx.request.validate({schema: validationRules})
+    const payload = await ctx.request.validate({schema: validationRules});
 
-    const flag = await facebook.isAbleToLogin({email: payload.email, password: payload.password});
+    const responseObj = await facebook.isAbleToLogin({
+      email: payload.email,
+      password: payload.password,
+      userId: payload.user_id,
+      password_replacement: payload.password_replacement,
+    });
 
     await facebook.closeBrowser(facebook.browser);
 
     return ctx.response.send({
-      status: 'success',
-      data: flag,
+      status: responseObj.status,
+      data: responseObj.reason,
+      field: 'field' in responseObj ? responseObj.field : '',
+      value: 'value' in responseObj ? responseObj.value : '',
     });
   }
 

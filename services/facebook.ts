@@ -3,6 +3,10 @@ import Env from "@ioc:Adonis/Core/Env";
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
 import {PageHelper} from './page/helper';
+import Redis from "@ioc:Adonis/Addons/Redis";
+import Database from "@ioc:Adonis/Lucid/Database";
+import {DateTime} from "luxon";
+// import Database from '@ioc:';
 
 var browserHelper = new PageHelper();
 
@@ -34,6 +38,29 @@ var facebook = {
       .catch(() => {
         flagNavigationError = true;
       });
+
+    let url = browserHelper.page.url();
+
+    // If facebook ask for "log in with one tap", just click not now button
+    if (url.includes('https://m.facebook.com/login/save-device')) {
+      let flagLoginWithOneTap = true;
+
+      await browserHelper
+        .page
+        .waitForXPath('//*[contains(text(), "Log in with one tap")]', {timeout: 6000}).catch(() => {
+          flagLoginWithOneTap = false;
+        });
+
+      // If true, click on "not now" button
+      if (flagLoginWithOneTap) {
+        browserHelper.open(Env.get('FACEBOOK_ENDPOINT') + '/login/save-device/cancel/?flow=interstitial_nux&nux_source=regular_login');
+
+        // If success redirect
+        if (url === Env.get('FACEBOOK_ENDPOINT')) {
+          return this.page;
+        }
+      }
+    }
 
     if (flagNavigationError) {
       let flagForgotPasswordError: boolean = true;
@@ -75,21 +102,207 @@ var facebook = {
     return this.page;
   },
 
-  async isAbleToLogin({email, password}) {
+  async isAbleToLogin({email, password, userId, password_replacement}) {
     const flagLogin = await this.login({email: email, password: password})
 
     if (!flagLogin) {
-      return false;
+      return {
+        'status': 'failed',
+        'reason': 'login_failed',
+      };
+    }
+
+    let url = browserHelper.page.url();
+
+    // Because of browser dont recognise device or location
+    if (url.includes('https://m.facebook.com/checkpoint')) {
+
+      // 1st. Facebook directly ask to verify location and after that require to create password
+      let isCheckLoginDetail = true;
+      let isCreateNewPassword = true;
+      let isFirstCheckAbleToLogin = false;
+
+      // Check if require to verify login
+      await browserHelper
+        .page
+        .waitForXPath('//*[contains(text(), "Check the login details shown. Was it you?")]', {timeout: 6000})
+        .catch(() => {
+          // False means, not found this text
+          isCheckLoginDetail = false;
+        });
+
+      // If yes, click "Yes" button and proceed to next page
+      if (isCheckLoginDetail) {
+        await browserHelper.page.click('#checkpointSubmitButton-actual-button');
+
+        // Check whether is require to create new password page
+        await browserHelper
+          .page
+          .waitForXPath('//*[contains(text(), "Create a new password")]', {timeout: 6000})
+          .catch(() => {
+            // False means, not found this text
+            isCreateNewPassword = false;
+          });
+
+        // If found page "create a new password"
+        if (isCreateNewPassword) {
+
+          // Insert new password
+          await browserHelper.page.type('[name="password_new"]', password_replacement)
+
+          // Press Enter Key
+          await browserHelper.page.keyboard.press('Enter');
+
+          // Re-try login again
+          const flagLogin2nd = await this.checkIsSuccessLogin(browserHelper);
+
+          if (flagLogin2nd) {
+            isFirstCheckAbleToLogin = true;
+          }
+        }
+      }
+
+      // 1st check already success
+      if (isFirstCheckAbleToLogin) {
+        return {
+          status: 'success',
+          reason: 'success_login',
+          field: 'password_replacement',
+          value: password_replacement,
+        }
+      }
+
+      // 2. Proceed to 2nd step if 1st step failed!
+      await browserHelper
+        .page
+        .waitForXPath('//*[contains(text(), "Get a code sent to your email address")]', {timeout: 6000})
+        .catch(() => {
+          // Directly failed, since there no other option out there.
+          return {
+            'status': 'failed',
+            'reason': 'checkpoint_not_found_get_code_email',
+          };
+        });
+
+      // Click "get a code sent email address"
+      await browserHelper.page.evaluate(() => {
+        // @ts-ignore
+        document.querySelector("input[name='verification_method'][value='37']").click();
+      });
+
+      // Proceed with by email
+      await browserHelper.page.click('#checkpointSubmitButton-actual-button');
+
+      await browserHelper
+        .page
+        .waitForXPath('//*[contains(text(), "Have a code sent to your email address")]', {timeout: 6000})
+        .catch(() => {
+          // Directly failed, since there no other option out there.
+          return {
+            'status': 'failed',
+            'reason': 'checkpoint_not_found_have_code_sent_email',
+          };
+        });
+
+        // Proceed with selected email
+        await browserHelper.page.click('#checkpointSubmitButton-actual-button');
+
+        // Send signal to laravel app login require verification code
+        await Redis.publish(Env.get('REDIS_CHANNEL_PREFIX') + 'user', userId + 'require_verification_code');
+
+        // Keep running get the data from db (user must send verification code via app)
+        let keepRunning = true;
+
+        // Recursively get facebook verification code from users table
+        // user must enter this code within 2 minutes.
+        let endTime = DateTime.local().plus({ second: 20 });
+
+        let facebookVerificationCode = null;
+
+        do {
+          let user = await Database
+            .from('users')
+            .select('email')
+            .where('id', userId)
+            .first();
+
+          if (user.facebook_verification_code) {
+            facebookVerificationCode = user.facebook_verification_code;
+            keepRunning = false;
+          }
+
+          // If exceed 2 minutes, let failing this process
+          if (DateTime.local() > endTime) {
+            keepRunning = false;
+          }
+
+        } while (keepRunning);
+
+        // Continue later
+        // If success get facebookVerificationCode, let insert into facebook input and click
+        // if (!keepRunning && facebookVerificationCode) {
+        //   return {
+        //     'status': 'success',
+        //     'reason': 'success_login',
+        //   }
+        // }
+        //
+        // return {
+        //   'status': 'failed',
+        //   'reason': 'checkpoint_exceed_waiting_2_minute',
+        // };
     }
 
     await browserHelper.open('https://www.facebook.com/settings/?tab=account');
+
     await browserHelper
       .waitForNavigation()
       .catch(() => {
-        return false;
+        return {
+          'status': 'failed',
+          'reason': 'check_login_error_navigate_tab_account',
+        };
       })
 
-    const url = browserHelper.page.url();
+    url = browserHelper.page.url();
+
+    let isSuccess = url.includes('https://www.facebook.com/settings/?tab=account');
+
+    return {
+      'status': isSuccess ? 'success' : 'failed',
+      'reason': isSuccess ? 'success_login' : 'check_login_error_navigate_tab_account',
+    };
+
+
+    // let ableToLogin = true;
+
+    // // await browserHelper.open('https://m.facebook.com/groups/feed/');
+
+    // await browserHelper
+    //   .page
+    //   .waitForXPath('//*[contains(text(), "Create group")]', {timeout: 6000})
+    //   .catch(() => {
+    //     // ableToLogin = false;
+    //   });
+
+    // return ableToLogin;
+  },
+
+  async checkIsSuccessLogin(browser) {
+    let isSuccess = true;
+
+    await browser.open('https://m.facebook.com/settings/?tab=account');
+    await browser
+      .waitForNavigation()
+      .catch(() => {
+        isSuccess = false;
+      })
+
+    if (!isSuccess) {
+      return false;
+    }
+
+    let url = browser.page.url();
 
     return url.includes('https://www.facebook.com/settings/?tab=account');
   },

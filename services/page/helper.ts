@@ -14,9 +14,9 @@ class PageHelper {
   public async init() {
     let headless = false;
 
-    if (Env.get('NODE_ENV') === 'production' || Env.get('NODE_ENV') === 'development') {
-      headless = true;
-    }
+    // if (Env.get('NODE_ENV') === 'production' || Env.get('NODE_ENV') === 'development') {
+    //   headless = true;
+    // }
 
     this.browser = await launch({
       headless: headless,
