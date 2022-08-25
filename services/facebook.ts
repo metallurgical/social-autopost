@@ -185,17 +185,67 @@ var facebook = {
           if (flagLogin2nd) {
             isFirstCheckAbleToLogin = true;
           }
-        }
-      }
 
-      // 1st check already success
-      if (isFirstCheckAbleToLogin) {
-        console.log('1st check able to login in already');
-        return {
-          status: 'success',
-          reason: 'success_login',
-          field: 'password_replacement',
-          value: password_replacement,
+          if (!isFirstCheckAbleToLogin) {
+            // Check for "Choose your account" text
+            console.log('Check for choose your account text')
+
+            let flagChooseYourAccount = true;
+
+            await browserHelper
+              .page
+              .waitForXPath('//*[contains(text(), "Choose your account")]', {timeout: 3000})
+              .catch(() => {
+                flagChooseYourAccount = false;
+              });
+
+            if (flagChooseYourAccount) {
+              console.log('Need to choose account')
+
+              await browserHelper.page.evaluate(() => {
+                // @ts-ignore
+                document.querySelector('[data-sigil="login_profile_form"]').click();
+              });
+
+              await browserHelper.page.waitForNavigation();
+
+              let checkUrl = browserHelper.page.url();
+
+              // Require to login using password again
+              if (checkUrl.includes('m.facebook.com/login/device-based/password')) {
+                console.log('Require to login again using new password')
+
+                await browserHelper.page.type('[name="pass"]', isCreateNewPassword ? password_replacement : password);
+
+                // Press Enter Key
+                await browserHelper.page.keyboard.press('Enter');
+
+                await browserHelper.page.waitForNavigation().catch(() => {});
+
+                // Re-try login again
+                const flagLogin3rd = await this.checkIsSuccessLogin(browserHelper);
+
+                if (flagLogin3rd) {
+                  return {
+                    status: 'success',
+                    reason: 'success_login',
+                    field: 'password_replacement',
+                    value: password_replacement,
+                  }
+                }
+              }
+            }
+          } else {
+            // 1st check already success
+            console.log('1st check able to login in already');
+
+            return {
+              status: 'success',
+              reason: 'success_login',
+              field: 'password_replacement',
+              value: password_replacement,
+            }
+          }
         }
       }
 
@@ -248,7 +298,7 @@ var facebook = {
 
         // Recursively get facebook verification code from users table
         // user must enter this code within 2 minutes.
-        let endTime = DateTime.local().plus({ minute: 1 });
+        let endTime = DateTime.local().plus({minute: 1});
 
         let facebookVerificationCode = null;
 
