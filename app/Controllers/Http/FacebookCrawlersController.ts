@@ -44,6 +44,8 @@ export default class FacebookCrawlersController {
 
     await facebook.closeBrowser(facebook.browser);
 
+    console.log('done checking...');
+
     return ctx.response.send({
       status: responseObj.status,
       data: responseObj.reason,
