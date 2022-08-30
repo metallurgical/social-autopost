@@ -120,7 +120,9 @@ var facebook = {
 
     // Because of browser dont recognise device or location
     if (url.includes('https://m.facebook.com/checkpoint')) {
-      console.log('require checkpoint');
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('require checkpoint');
+      }
 
       // 1st. Facebook directly ask to verify location and after that require to create password
       let isCheckLoginDetail = true;
@@ -340,7 +342,9 @@ var facebook = {
 
         let facebookVerificationCode = null;
 
-        console.log('require verification code');
+        if (Env.get('DEBUG_ENABLED') == 'true') {
+          console.log('require verification code');
+        }
 
         do {
           let user = await Database
