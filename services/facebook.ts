@@ -112,7 +112,9 @@ var facebook = {
       };
     }
 
-    console.log('pass login');
+    if (Env.get('DEBUG_ENABLED') == 'true') {
+      console.log('pass login');
+    }
 
     let url = browserHelper.page.url();
 
@@ -127,7 +129,10 @@ var facebook = {
       let isLoginApprovalNeeded = true;
 
       // Check if require to verify login
-      console.log('check for login approval text');
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('check for login approval text');
+      }
+
       await browserHelper
         .page
         .waitForXPath('//*[contains(text(), "Login approval needed")]', {timeout: 1000})
@@ -137,7 +142,9 @@ var facebook = {
         });
 
       if (isLoginApprovalNeeded) {
-        console.log('require login approval');
+        if (Env.get('DEBUG_ENABLED') == 'true') {
+          console.log('require login approval');
+        }
 
         // Click on "continue" button
         await browserHelper.page.click('#checkpointSubmitButton-actual-button');
@@ -146,7 +153,10 @@ var facebook = {
       }
 
       // Check if require to verify login
-      console.log('check for check the login detail text');
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('check for check the login detail text');
+      }
+
       await browserHelper
         .page
         .waitForXPath('//*[contains(text(), "Check the login details shown. Was it you?")]', {timeout: 1000})
@@ -157,11 +167,17 @@ var facebook = {
 
       // If yes, click "Yes" button and proceed to next page
       if (isCheckLoginDetail) {
-        console.log('require check login detail');
+        if (Env.get('DEBUG_ENABLED') == 'true') {
+          console.log('require check login detail');
+        }
+
         await browserHelper.page.click('#checkpointSubmitButton-actual-button');
 
         // Check whether is require to create new password page
-        console.log('check create new password text');
+        if (Env.get('DEBUG_ENABLED') == 'true') {
+          console.log('check create new password text');
+        }
+
         await browserHelper
           .page
           .waitForXPath('//*[contains(text(), "Create a new password")]', {timeout: 1000})
@@ -172,7 +188,10 @@ var facebook = {
 
         // If found page "create a new password"
         if (isCreateNewPassword) {
-          console.log('require create new password');
+          if (Env.get('DEBUG_ENABLED') == 'true') {
+            console.log('require create new password');
+          }
+
           // Insert new password
           await browserHelper.page.type('[name="password_new"]', password_replacement)
 
@@ -188,7 +207,9 @@ var facebook = {
 
           if (!isFirstCheckAbleToLogin) {
             // Check for "Choose your account" text
-            console.log('Check for choose your account text')
+            if (Env.get('DEBUG_ENABLED') == 'true') {
+              console.log('Check for choose your account text')
+            }
 
             let flagChooseYourAccount = true;
 
@@ -200,7 +221,9 @@ var facebook = {
               });
 
             if (flagChooseYourAccount) {
-              console.log('Need to choose account')
+              if (Env.get('DEBUG_ENABLED') == 'true') {
+                console.log('Need to choose account')
+              }
 
               await browserHelper.page.evaluate(() => {
                 // @ts-ignore
@@ -213,7 +236,9 @@ var facebook = {
 
               // Require to login using password again
               if (checkUrl.includes('m.facebook.com/login/device-based/password')) {
-                console.log('Require to login again using new password')
+                if (Env.get('DEBUG_ENABLED') == 'true') {
+                  console.log('Require to login again using new password')
+                }
 
                 await browserHelper.page.type('[name="pass"]', isCreateNewPassword ? password_replacement : password);
 
@@ -237,7 +262,9 @@ var facebook = {
             }
           } else {
             // 1st check already success
-            console.log('1st check able to login in already');
+            if (Env.get('DEBUG_ENABLED') == 'true') {
+              console.log('1st check able to login in already');
+            }
 
             return {
               status: 'success',
@@ -252,7 +279,10 @@ var facebook = {
       let flagGetCodeSentToEmail = true;
 
       // 2. Proceed to 2nd step if 1st step failed!
-      console.log('check code sent to your email address');
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('check code sent to your email address');
+      }
+
       await browserHelper
         .page
         .waitForXPath('//*[contains(text(), "Get a code sent to your email address")]', {timeout: 1000})
@@ -262,7 +292,10 @@ var facebook = {
         });
 
       if (flagGetCodeSentToEmail) {
-        console.log('require code sent to your email address');
+        if (Env.get('DEBUG_ENABLED') == 'true') {
+          console.log('require code sent to your email address');
+        }
+
         // Click "get a code sent email address"
         await browserHelper.page.evaluate(() => {
           // @ts-ignore
@@ -272,7 +305,9 @@ var facebook = {
         // Proceed with by email
         await browserHelper.page.click('#checkpointSubmitButton-actual-button');
 
-        console.log('check have a code sent to your email address');
+        if (Env.get('DEBUG_ENABLED') == 'true') {
+          console.log('check have a code sent to your email address');
+        }
 
         await browserHelper
           .page
@@ -289,8 +324,11 @@ var facebook = {
         await browserHelper.page.click('#checkpointSubmitButton-actual-button');
 
         // Send signal to laravel app login require verification code
-        console.log('Publish redis pub sub with user Id: ' + userId);
-        console.log('Publish redis pub sub with channel: ' + (Env.get('REDIS_CHANNEL_PREFIX') + 'user'));
+        if (Env.get('DEBUG_ENABLED') == 'true') {
+          console.log('Publish redis pub sub with user Id: ' + userId);
+          console.log('Publish redis pub sub with channel: ' + (Env.get('REDIS_CHANNEL_PREFIX') + 'user'));
+        }
+
         await Redis.publish(Env.get('REDIS_CHANNEL_PREFIX') + 'user', userId + ':require_verification_code');
 
         // Keep running get the data from db (user must send verification code via app)
@@ -335,18 +373,24 @@ var facebook = {
             .catch(() => {
             });
 
-          console.log('Insert verification code: ' + facebookVerificationCode);
+          if (Env.get('DEBUG_ENABLED') == 'true') {
+            console.log('Insert verification code: ' + facebookVerificationCode);
+          }
 
           // await browserHelper.page.type('[name="captcha_response"]', facebookVerificationCode);
 
           // await browserHelper.page.evaluate("document.querySelector('input[name=\"captcha_response\"]').value = " + facebookVerificationCode);
-          await browserHelper.page.evaluate((facebookVerificationCode) => {
-            console.log('Received verification code from nodejs: ' + facebookVerificationCode)
+          await browserHelper.page.evaluate((facebookVerificationCode, debugEnabled) => {
+            if (debugEnabled == 'true') {
+              console.log('Received verification code from nodejs: ' + facebookVerificationCode)
+            }
             // @ts-ignore
             document.querySelector("input[name='captcha_response']").value = facebookVerificationCode;
-          }, facebookVerificationCode);
+          }, facebookVerificationCode, Env.get('DEBUG_ENABLED'));
 
-          console.log('Submit');
+          if (Env.get('DEBUG_ENABLED') == 'true') {
+            console.log('Submit');
+          }
           // // Press enter key
           // await browserHelper.page.keyboard.press('Enter');
 
@@ -354,7 +398,9 @@ var facebook = {
           await browserHelper.page.click('#checkpointSubmitButton-actual-button');
 
           // Check if require to verify login
-          console.log('re-check for check the login detail text');
+          if (Env.get('DEBUG_ENABLED') == 'true') {
+            console.log('re-check for check the login detail text');
+          }
 
           let reCheckLoginDetailStep = true;
 
@@ -367,12 +413,16 @@ var facebook = {
             });
 
           if (reCheckLoginDetailStep) {
-            console.log('found text. Click yes button');
+            if (Env.get('DEBUG_ENABLED') == 'true') {
+              console.log('found text. Click yes button');
+            }
 
             // Proceed with yes
             await browserHelper.page.click('#checkpointSubmitButton-actual-button');
 
-            console.log('Click yes button');
+            if (Env.get('DEBUG_ENABLED') == 'true') {
+              console.log('Click yes button');
+            }
           }
 
           // The code that you entered is incorrect. Please check the code we sent to your email.
@@ -392,7 +442,10 @@ var facebook = {
       }
     }
 
-    console.log('all passed, redirect to profile account')
+    if (Env.get('DEBUG_ENABLED') == 'true') {
+      console.log('all passed, redirect to profile account')
+    }
+
     await browserHelper.open('https://m.facebook.com/settings/?tab=account');
 
     await browserHelper
@@ -408,7 +461,9 @@ var facebook = {
 
     let isSuccess = url.includes('https://m.facebook.com/settings/?tab=account');
 
-    console.log('success redirect to profile account')
+    if (Env.get('DEBUG_ENABLED') == 'true') {
+      console.log('success redirect to profile account')
+    }
 
     return {
       'status': isSuccess ? 'success' : 'failed',

@@ -3,6 +3,7 @@ import {facebook} from '../../../services/facebook';
 import {rules, schema} from '@ioc:Adonis/Core/Validator'
 // import Redis from "@ioc:Adonis/Addons/Redis";
 import Database from "@ioc:Adonis/Lucid/Database";
+import Env from "@ioc:Adonis/Core/Env";
 
 export default class FacebookCrawlersController {
   public async test() {
@@ -44,7 +45,9 @@ export default class FacebookCrawlersController {
 
     await facebook.closeBrowser(facebook.browser);
 
-    console.log('done checking...');
+    if (Env.get('DEBUG_ENABLED') == 'true') {
+      console.log('done checking...');
+    }
 
     return ctx.response.send({
       status: responseObj.status,
