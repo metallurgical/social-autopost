@@ -16,6 +16,9 @@ var facebook = {
   page: null,
 
   async login({email, password, timeout = 6000}) {
+    if (Env.get('DEBUG_ENABLED') == 'true') {
+      console.log('Enter check login');
+    }
     this.browser = await browserHelper.init();
     this.page = browserHelper.page;
     await browserHelper.open('https://m.facebook.com');
@@ -41,8 +44,16 @@ var facebook = {
 
     let url = browserHelper.page.url();
 
+    if (Env.get('DEBUG_ENABLED') == 'true') {
+      console.log('Check login done');
+    }
+
     // If facebook ask for "log in with one tap", just click not now button
     if (url.includes('https://m.facebook.com/login/save-device')) {
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('Require save device');
+      }
+
       let flagLoginWithOneTap = true;
 
       await browserHelper
@@ -53,10 +64,18 @@ var facebook = {
 
       // If true, click on "not now" button
       if (flagLoginWithOneTap) {
+        if (Env.get('DEBUG_ENABLED') == 'true') {
+          console.log('flagLoginWithOneTap');
+        }
+
         await browserHelper.open(Env.get('FACEBOOK_ENDPOINT') + '/login/save-device/cancel/?flow=interstitial_nux&nux_source=regular_login');
 
         // If success redirect
         if (url === Env.get('FACEBOOK_ENDPOINT')) {
+          if (Env.get('DEBUG_ENABLED') == 'true') {
+            console.log('Url matched, yahooo');
+          }
+
           return this.page;
         }
       }
@@ -117,6 +136,10 @@ var facebook = {
     }
 
     let url = browserHelper.page.url();
+
+    if (Env.get('DEBUG_ENABLED') == 'true') {
+      console.log('checking url: ' + url);
+    }
 
     // Because of browser dont recognise device or location
     if (url.includes('https://m.facebook.com/checkpoint')) {
