@@ -96,7 +96,7 @@ export default class FacebookCrawlersController {
       groups: schema.array().members(schema.object().members({
         link: schema.string(),
       })),
-      images: schema.array().members(schema.string()),
+      // images: schema.array().members(schema.string()),
       message: schema.string(),
     });
 
@@ -122,7 +122,7 @@ export default class FacebookCrawlersController {
     await facebook.post({
       message: payload.message,
       page: page,
-      images: payload.images,
+      images: ctx.request.input('images', []), // Default value is [] if not supply images
       groups: payload.groups,
     });
 
