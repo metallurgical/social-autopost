@@ -1,7 +1,7 @@
 import {HttpContextContract} from "@ioc:Adonis/Core/HttpContext";
 import {facebook} from '../../../services/facebook';
 import {rules, schema} from '@ioc:Adonis/Core/Validator'
-// import Redis from "@ioc:Adonis/Addons/Redis";
+import Redis from "@ioc:Adonis/Addons/Redis";
 import Database from "@ioc:Adonis/Lucid/Database";
 import Env from "@ioc:Adonis/Core/Env";
 
@@ -21,6 +21,12 @@ export default class FacebookCrawlersController {
       .first();
 
     console.log(user.email);
+    return 'handled';
+  }
+
+  public async testRedis() {
+    await Redis.publish(Env.get('REDIS_CHANNEL_PREFIX') + 'user', '1:require_verification_code');
+
     return 'handled';
   }
 
