@@ -135,6 +135,14 @@ var facebook = {
       console.log('pass login');
     }
 
+    // Wait for facebook redirect after successful login
+    await browserHelper.waitForNavigation()
+      .catch(() => {
+        if (Env.get('DEBUG_ENABLED') == 'true') {
+          console.log('No navigation occur. Skip');
+        }
+      });
+
     let url = browserHelper.page.url();
 
     if (Env.get('DEBUG_ENABLED') == 'true') {
