@@ -43,14 +43,14 @@ var facebook = {
     }
 
     // Wait for button "Log In" appear
-    this.delay(3);
+    await this.delay(3);
 
     await browserHelper.focusElement('#m_login_email');
     await browserHelper.clearElement('#m_login_email');
     await browserHelper.sendElementText('#m_login_email', email);
 
     // Wait for few seconds
-    this.delay(3);
+    await this.delay(3);
 
     await browserHelper.focusElement('#m_login_password');
     await browserHelper.clearElement('#m_login_password');
@@ -59,7 +59,7 @@ var facebook = {
     // Set default navigation
 
     // Wait for few seconds before clicks
-    this.delay(3);
+    await this.delay(3);
 
     await browserHelper.setDefaultNavigationTimeout(timeout);
     await browserHelper.clickElement("button[name='login']");
