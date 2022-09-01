@@ -198,10 +198,10 @@ var facebook = {
 
       await browserHelper
         .page
-        .waitForXPath('//*[contains(text(), "Login approval needed")]', {timeout: 1000})
+        .waitForXPath('//*[contains(text(), "Login approval needed")]', {timeout: 2000})
         .catch(() => {
           // False means, not found this text
-          isLoginApprovalNeeded = true;
+          isLoginApprovalNeeded = false;
         });
 
       if (isLoginApprovalNeeded) {
@@ -211,7 +211,6 @@ var facebook = {
 
         // Click on "continue" button
         await browserHelper.page.click('#checkpointSubmitButton-actual-button');
-
         // Usually once enter this part, directly enter to login page
       }
 
@@ -222,7 +221,7 @@ var facebook = {
 
       await browserHelper
         .page
-        .waitForXPath('//*[contains(text(), "Check the login details shown. Was it you?")]', {timeout: 1000})
+        .waitForXPath('//*[contains(text(), "Check the login details shown. Was it you?")]', {timeout: 2000})
         .catch(() => {
           // False means, not found this text
           isCheckLoginDetail = false;
