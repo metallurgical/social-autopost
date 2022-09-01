@@ -52,7 +52,7 @@ export default class FacebookCrawlersController {
       // password_replacement: payload.password_replacement,
     });
 
-    // await facebook.closeBrowser(facebook.browser);
+    await facebook.closeBrowser(facebook.browser);
 
     if (Env.get('DEBUG_ENABLED') == 'true') {
       console.log('done checking...');
