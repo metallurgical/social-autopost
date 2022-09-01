@@ -29,9 +29,7 @@ var facebook = {
     await browserHelper.open('https://m.facebook.com');
 
     // Wait for navigation done
-    await browserHelper.waitForNavigation()
-      .catch(() => {
-      });
+    await browserHelper.waitForNavigation().catch(() => {});
 
     if (Env.get('DEBUG_ENABLED') == 'true') {
       let screenshot = "./screenshot-before-login-" + Math.random() + ".png";
@@ -44,14 +42,20 @@ var facebook = {
       });
     }
 
-    this.delay(3);
+    // Wait for button "Log In" appear
+    await browserHelper
+      .page
+      .waitForXPath('//*[contains(text(), "Log In")]', {timeout: 6000})
+      .catch(() => {
+        // flagForgotPasswordError = false;
+      });
 
     await browserHelper.focusElement('#m_login_email');
     await browserHelper.clearElement('#m_login_email');
     await browserHelper.sendElementText('#m_login_email', email);
 
     // Wait for few seconds
-    this.delay(3);
+    this.delay(2);
 
     await browserHelper.focusElement('#m_login_password');
     await browserHelper.clearElement('#m_login_password');
@@ -60,7 +64,7 @@ var facebook = {
     // Set default navigation
 
     // Wait for few seconds before clicks
-    this.delay(3);
+    this.delay(2);
 
     await browserHelper.setDefaultNavigationTimeout(timeout);
     await browserHelper.clickElement("button[name='login']");
