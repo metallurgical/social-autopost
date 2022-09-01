@@ -163,7 +163,7 @@ var facebook = {
           console.log('Redirect to : ' + next);
         }
 
-        browserHelper.page.goto(next);
+        await browserHelper.page.goto(next);
       }
     }
 
