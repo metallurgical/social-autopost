@@ -773,8 +773,25 @@ var facebook = {
     for (let index = 0; index < groups.length; ++index) {
       let elem = groups[index];
 
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('Navigate to group: ' + elem.link)
+      }
+
       // @ts-ignore
       await page.goto(Env.get('FACEBOOK_ENDPOINT') + elem.link);
+
+      // Wait for navigation finish
+      await page.waitForNavigation().catch(() => {});
+
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('Check text: Whats on your mind');
+      }
+
+      // Make sure 'What's on your mind?' text appear on the page
+      await page
+        .waitForXPath('//*[contains(text(), "What\'s on your mind?")]', {timeout: 6000})
+        .catch(() => {
+        });
 
       // Click trigger button input
       // await page.click('.feedRevamp > div:nth-of-type(3) > div > div:nth-of-type(1) > div[role="button"]:nth-of-type(2)'); --> no longer available
@@ -782,13 +799,27 @@ var facebook = {
 
       // Wait for textarea visible to page
       await page.waitForSelector(".mentions > textarea.mentions-input", {visible: true});
-      //
+
+      // Insert text into textarea
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('type message into text area');
+      }
+
       // Insert into textarea
       await page.type('.mentions > textarea.mentions-input', message);
 
       if (images.length) {
+        if (Env.get('DEBUG_ENABLED') == 'true') {
+          console.log('uploaded images as well')
+        }
+
         const uploadField = await page.$('#photo_input');
         await uploadField.uploadFile(...images);
+      }
+
+      // Click post button
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('all passed, redirect to profile account')
       }
 
       // await Promise.all([
