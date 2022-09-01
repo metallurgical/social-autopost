@@ -121,8 +121,11 @@ var facebook = {
     return this.page;
   },
 
-  async isAbleToLogin({email, password, userId, password_replacement}) {
+  async isAbleToLogin({email, password, userId}) {
     const flagLogin = await this.login({email: email, password: password})
+
+    let isRequireChangePassword = false;
+    let generateNewPassword = '';
 
     if (!flagLogin) {
       return {
@@ -248,12 +251,16 @@ var facebook = {
 
         // If found page "create a new password"
         if (isCreateNewPassword) {
+          isRequireChangePassword = true;
+
           if (Env.get('DEBUG_ENABLED') == 'true') {
             console.log('require create new password');
           }
 
+          generateNewPassword = this.randomString();
+
           // Insert new password
-          await browserHelper.page.type('[name="password_new"]', password_replacement)
+          await browserHelper.page.type('[name="password_new"]', generateNewPassword)
 
           // Press Enter Key
           await browserHelper.page.keyboard.press('Enter');
@@ -300,7 +307,13 @@ var facebook = {
                   console.log('Require to login again using new password')
                 }
 
-                await browserHelper.page.type('[name="pass"]', isCreateNewPassword ? password_replacement : password);
+                generateNewPassword = this.randomString();
+
+                if (Env.get('DEBUG_ENABLED') == 'true') {
+                  console.log('Require to login again using new password: ' + generateNewPassword)
+                }
+
+                await browserHelper.page.type('[name="pass"]', isCreateNewPassword ? generateNewPassword : password);
 
                 // Press Enter Key
                 await browserHelper.page.keyboard.press('Enter');
@@ -315,8 +328,8 @@ var facebook = {
                   return {
                     status: 'success',
                     reason: 'success_login',
-                    field: 'password_replacement',
-                    value: password_replacement,
+                    field: isRequireChangePassword ? 'password_replacement' : '',
+                    value: isRequireChangePassword ? generateNewPassword : '',
                   }
                 }
               }
@@ -330,8 +343,8 @@ var facebook = {
             return {
               status: 'success',
               reason: 'success_login',
-              field: 'password_replacement',
-              value: password_replacement,
+              field: isRequireChangePassword ? 'password_replacement' : '',
+              value: isRequireChangePassword ? generateNewPassword : '',
             }
           }
         }
@@ -493,6 +506,89 @@ var facebook = {
             if (Env.get('DEBUG_ENABLED') == 'true') {
               console.log('Click yes button');
             }
+
+            let flagKeepYourAccountSecure = true;
+
+            if (Env.get('DEBUG_ENABLED') == 'true') {
+              console.log('Check Text: Keep your account secure');
+            }
+
+            await browserHelper
+              .page
+              .waitForXPath('//*[contains(text(), "Keep your account secure")]', {timeout: 6000})
+              .catch(() => {
+                // False means, not found this text
+                flagKeepYourAccountSecure = false;
+              });
+
+            if (flagKeepYourAccountSecure) {
+              if (Env.get('DEBUG_ENABLED') == 'true') {
+                console.log('Found Check Text: Keep your account secure');
+              }
+              // Proceed with continue button
+              await browserHelper.page.click('#checkpointSubmitButton-actual-button');
+
+              let flagCreateNewPassword = true;
+
+              if (Env.get('DEBUG_ENABLED') == 'true') {
+                console.log('Check Text: Create a new password');
+              }
+
+              await browserHelper
+                .page
+                .waitForXPath('//*[contains(text(), "Create a new password")]', {timeout: 6000})
+                .catch(() => {
+                  // False means, not found this text
+                  flagCreateNewPassword = false;
+                });
+
+              if (flagCreateNewPassword) {
+                if (Env.get('DEBUG_ENABLED') == 'true') {
+                  console.log('Found Check Text: Create a new password');
+                }
+
+                generateNewPassword = this.randomString();
+
+                if (Env.get('DEBUG_ENABLED') == 'true') {
+                  console.log('require new password. Generate a new one: ' + generateNewPassword);
+                }
+
+                await browserHelper.page.evaluate((generateNewPassword) => {
+                  // @ts-ignore
+                  document.querySelector("input[name='password_new']").value = generateNewPassword;
+                }, generateNewPassword);
+
+                // Proceed with Next
+                await browserHelper.page.click('#checkpointSubmitButton-actual-button');
+
+                if (Env.get('DEBUG_ENABLED') == 'true') {
+                  console.log('Done click on continue button');
+                }
+
+                let flagAreAllSet = true;
+
+                if (Env.get('DEBUG_ENABLED') == 'true') {
+                  console.log('Check Text: You are all set');
+                }
+
+                await browserHelper
+                  .page
+                  .waitForXPath('//*[contains(text(), " You\'re all set")]', {timeout: 6000})
+                  .catch(() => {
+                    // False means, not found this text
+                    flagAreAllSet = false;
+                  });
+
+                if (flagAreAllSet) {
+                  if (Env.get('DEBUG_ENABLED') == 'true') {
+                    console.log('Found Check Text: You\'re all set');
+                  }
+
+                  // Proceed with Continue button
+                  await browserHelper.page.click('#checkpointSubmitButton-actual-button');
+                }
+              }
+            }
           }
 
           // The code that you entered is incorrect. Please check the code we sent to your email.
@@ -536,23 +632,11 @@ var facebook = {
     }
 
     return {
-      'status': isSuccess ? 'success' : 'failed',
-      'reason': isSuccess ? 'success_login' : 'check_login_error_navigate_tab_account',
+      status: isSuccess ? 'success' : 'failed',
+      reason: isSuccess ? 'success_login' : 'check_login_error_navigate_tab_account',
+      field: isRequireChangePassword ? 'password_replacement' : '',
+      value: isRequireChangePassword ? generateNewPassword : '',
     };
-
-
-    // let ableToLogin = true;
-
-    // // await browserHelper.open('https://m.facebook.com/groups/feed/');
-
-    // await browserHelper
-    //   .page
-    //   .waitForXPath('//*[contains(text(), "Create group")]', {timeout: 6000})
-    //   .catch(() => {
-    //     // ableToLogin = false;
-    //   });
-
-    // return ableToLogin;
   },
 
   async checkIsSuccessLogin(browser) {
@@ -809,7 +893,85 @@ var facebook = {
     }
 
     return obj;
-  }
+  },
+
+
+  randomString(length = 10) {
+    var LOWER_CASE_MASK = 'abcdefghijklmnopqrstuvwxyz';
+    var UPPER_CASE_MASK = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    var NUMBER_MASK = '0123456789';
+    var SYMBOL_MASK = '!@#$%^&*';
+    var ALL_MASK = LOWER_CASE_MASK + UPPER_CASE_MASK + NUMBER_MASK + SYMBOL_MASK;
+
+    var result = '';
+
+    for (var i = 0; i < 4; i++) {
+      result += this.randomise(LOWER_CASE_MASK);
+      result += this.randomise(UPPER_CASE_MASK);
+      result += this.randomise(NUMBER_MASK);
+      result += this.randomise(SYMBOL_MASK);
+    }
+
+    for (var j = 0; j < length - 12; j++) {
+      result += ALL_MASK[Math.round(Math.random() * (ALL_MASK.length - 1))];
+    }
+    return this.shuffle(result);
+  },
+
+  randomise(string) {
+    return string[Math.round(Math.random() * (string.length - 1))];
+  },
+
+  shuffle(string) {
+    var parts = string.split('');
+    for (var i = parts.length; i > 0;) {
+      var random: any = parseInt(Math.random() * i);
+      var temp = parts[--i];
+      parts[i] = parts[random];
+      parts[random] = temp;
+    }
+    return parts.join('');
+  },
+
+  // getRandomChar(str) {
+  //   return str.charAt(Math.floor(Math.random() * str.length));
+  // },
+  //
+  // shuffle(array) {
+  //   var currentIndex = array.length, randomIndex;
+  //
+  //   // While there remain elements to shuffle...
+  //   while (currentIndex != 0) {
+  //
+  //     // Pick a remaining element...
+  //     randomIndex = Math.floor(Math.random() * currentIndex);
+  //     currentIndex--;
+  //
+  //     // And swap it with the current element.
+  //     [array[currentIndex], array[randomIndex]] = [
+  //       array[randomIndex], array[currentIndex]];
+  //   }
+  //
+  //   return array;
+  // },
+  //
+  // generateP(length = 10) {
+  //   const groups = [
+  //     'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  //     'abcdefghijklmnopqrstuvwxyz',
+  //     '1234567890',
+  //     '!@#$%^&*()_+'
+  //   ];
+  //
+  //   let pass = groups.map(this.getRandomChar).join('');
+  //
+  //   const str = groups.join('');
+  //
+  //   for (let i = pass.length; i <= length; i++) {
+  //     pass += this.getRandomChar(str)
+  //   }
+  //   return this.shuffle(pass);
+  // }
 }
 
 export {facebook};

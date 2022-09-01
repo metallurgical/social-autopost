@@ -21,6 +21,9 @@ export default class FacebookCrawlersController {
       .first();
 
     console.log(user.email);
+
+    // console.log(facebook.randomString(5));
+
     return 'handled';
   }
 
@@ -36,7 +39,7 @@ export default class FacebookCrawlersController {
         rules.email(),
       ]),
       password: schema.string(),
-      password_replacement: schema.string(),
+      // password_replacement: schema.string(),
       user_id: schema.string(),
     });
 
@@ -46,10 +49,10 @@ export default class FacebookCrawlersController {
       email: payload.email,
       password: payload.password,
       userId: payload.user_id,
-      password_replacement: payload.password_replacement,
+      // password_replacement: payload.password_replacement,
     });
 
-    await facebook.closeBrowser(facebook.browser);
+    // await facebook.closeBrowser(facebook.browser);
 
     if (Env.get('DEBUG_ENABLED') == 'true') {
       console.log('done checking...');
