@@ -151,7 +151,7 @@ var facebook = {
 
     // If require checkpoint but still not redirect to that page
     // Make it redirect
-    if (url.includes('https://m.facebook.com/login.php?next=https://m.facebook.com/checkpoint')) {
+    if (url.includes('https://m.facebook.com/login.php?next=https%3A%2F%2Fm.facebook.com%2Fcheckpoint')) {
       if (Env.get('DEBUG_ENABLED') == 'true') {
         console.log('Next redirect still not occur')
       }
