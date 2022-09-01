@@ -163,7 +163,7 @@ var facebook = {
           console.log('Redirect to : ' + next);
         }
 
-        await browserHelper.page.goto(next);
+        await browserHelper.page.goto('https://m.facebook.com/checkpoint/&refsrc=deprecated&__req=2&_rdr');
       }
     }
 
