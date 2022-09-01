@@ -787,15 +787,18 @@ var facebook = {
         console.log('Check text: Whats on your mind');
       }
 
-      // Make sure 'What's on your mind?' text appear on the page
+      // Make sure 'Write something...' text appear on the page
       await page
-        .waitForXPath('//*[contains(text(), "What\'s on your mind?")]', {timeout: 6000})
+        .waitForXPath('//*[contains(text(), "Write something")]', {timeout: 6000})
         .catch(() => {
         });
 
       // Click trigger button input
-      // await page.click('.feedRevamp > div:nth-of-type(3) > div > div:nth-of-type(1) > div[role="button"]:nth-of-type(2)'); --> no longer available
-      await page.click('#MComposer > div > div > div:nth-of-type(1) > div[role="button"]');
+      // This selector is for group post
+      await page.click('.feedRevamp > div:nth-of-type(3) > div > div:nth-of-type(1) > div[role="button"]:nth-of-type(2)');
+
+      // This selector is for personal post
+      // await page.click('#MComposer > div > div > div:nth-of-type(1) > div[role="button"]');
 
       // Wait for textarea visible to page
       await page.waitForSelector(".mentions > textarea.mentions-input", {visible: true});
