@@ -126,6 +126,7 @@ var facebook = {
 
     let isRequireChangePassword = false;
     let generateNewPassword = '';
+    let screenshot;
 
     if (!flagLogin) {
       return {
@@ -156,7 +157,14 @@ var facebook = {
     // Make it redirect
     if (url.includes('https://m.facebook.com/login.php?next=https%3A%2F%2Fm.facebook.com%2Fcheckpoint')) {
       if (Env.get('DEBUG_ENABLED') == 'true') {
-        console.log('Next redirect still not occur')
+        screenshot = "./screenshot-redirect-to-next-" + Math.random() + ".png";
+
+        await browserHelper.page.screenshot({ // Screenshot the website using defined options
+          path: screenshot, // Save the screenshot in current directory
+          fullPage: true // take a fullpage screenshot
+        });
+
+        console.log('Next redirect still not occur. Screenshot name: ' + screenshot);
       }
 
       let next = this.getAllUrlParams(url).next;
@@ -356,13 +364,13 @@ var facebook = {
         console.log('check code sent to your email address');
       }
 
-      let screenshot = "./screenshot" + Math.random() + ".png";
+      screenshot = "./screenshot-code-sent-to-your-email-" + Math.random() + ".png";
 
       if (Env.get('DEBUG_ENABLED') == 'true') {
         console.log('Screenshot name: ' + screenshot);
 
         await browserHelper.page.screenshot({ // Screenshot the website using defined options
-          path: "./screenshot-" + Math.random() + ".png", // Save the screenshot in current directory
+          path: screenshot, // Save the screenshot in current directory
           fullPage: true // take a fullpage screenshot
         });
       }
