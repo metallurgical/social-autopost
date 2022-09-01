@@ -15,22 +15,53 @@ var facebook = {
   browser: null,
   page: null,
 
+  async delay(ms) {
+    new Promise(res => setTimeout(res, ms))
+  },
+
   async login({email, password, timeout = 6000}) {
     if (Env.get('DEBUG_ENABLED') == 'true') {
       console.log('Enter check login');
     }
+
     this.browser = await browserHelper.init();
     this.page = browserHelper.page;
     await browserHelper.open('https://m.facebook.com');
 
+    // Wait for navigation done
+    await browserHelper.waitForNavigation()
+      .catch(() => {
+      });
+
+    if (Env.get('DEBUG_ENABLED') == 'true') {
+      let screenshot = "./screenshot-before-login-" + Math.random() + ".png";
+
+      console.log('Check before login done: ' + screenshot);
+
+      await browserHelper.page.screenshot({
+        path: screenshot,
+        fullPage: true
+      });
+    }
+
+    this.delay(3);
+
     await browserHelper.focusElement('#m_login_email');
     await browserHelper.clearElement('#m_login_email');
     await browserHelper.sendElementText('#m_login_email', email);
+
+    // Wait for few seconds
+    this.delay(3);
+
     await browserHelper.focusElement('#m_login_password');
     await browserHelper.clearElement('#m_login_password');
     await browserHelper.sendElementText('#m_login_password', password);
 
     // Set default navigation
+
+    // Wait for few seconds before clicks
+    this.delay(3);
+
     await browserHelper.setDefaultNavigationTimeout(timeout);
     await browserHelper.clickElement("button[name='login']");
 
@@ -45,9 +76,9 @@ var facebook = {
     let url = browserHelper.page.url();
 
     if (Env.get('DEBUG_ENABLED') == 'true') {
-      console.log('Check login done');
-
       let screenshot = "./screenshot-after-login-" + Math.random() + ".png";
+
+      console.log('Check after login done: ' + screenshot);
 
       await browserHelper.page.screenshot({
         path: screenshot,
