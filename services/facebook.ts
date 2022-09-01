@@ -358,7 +358,7 @@ var facebook = {
 
       await browserHelper
         .page
-        .waitForXPath('//*[contains(text(), "Get a code sent to your email address")]', {timeout: 1000})
+        .waitForXPath('//*[contains(text(), "Get a code sent to your email address")]', {timeout: 6000})
         .catch(() => {
           // Directly failed, since there no other option out there.
           flagGetCodeSentToEmail = false;
