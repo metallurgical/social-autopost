@@ -46,6 +46,13 @@ var facebook = {
 
     if (Env.get('DEBUG_ENABLED') == 'true') {
       console.log('Check login done');
+
+      let screenshot = "./screenshot-after-login-" + Math.random() + ".png";
+
+      await browserHelper.page.screenshot({
+        path: screenshot,
+        fullPage: true
+      });
     }
 
     // If facebook ask for "log in with one tap", just click not now button
@@ -82,40 +89,57 @@ var facebook = {
     }
 
     if (flagNavigationError) {
-      let flagForgotPasswordError: boolean = true;
-      let flagHelpFindAccountError: boolean = true;
-      let flagCantFindAccountError: boolean = true;
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('FlagNavigationError occur');
+      }
+
+      // let flagForgotPasswordError: boolean = true;
+      // let flagHelpFindAccountError: boolean = true;
+      // let flagCantFindAccountError: boolean = true;
+
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('Check text: Did you forget your password?');
+      }
 
       await browserHelper
         .page
-        .waitForXPath('//*[contains(text(), "Did you forget your password?")]', {timeout: 6000}).catch(() => {
-          flagForgotPasswordError = false;
+        .waitForXPath('//*[contains(text(), "Did you forget your password?")]', {timeout: 6000})
+        .catch(() => {
+          // flagForgotPasswordError = false;
         });
 
-      if (flagForgotPasswordError) {
-        return false;
+      // if (flagForgotPasswordError) {
+      //   return false;
+      // }
+
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('Check text: Need help with finding your account?');
       }
 
       await browserHelper
         .page
         .waitForXPath('//*[contains(text(), "Need help with finding your account?")]', {timeout: 6000})
         .catch(() => {
-          flagHelpFindAccountError = false;
+          // flagHelpFindAccountError = false;
         });
 
-      if (flagHelpFindAccountError) {
-        return false;
+      // if (flagHelpFindAccountError) {
+      //   return false;
+      // }
+
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('Check text: Can\'t find account');
       }
 
       await browserHelper
         .page
         .waitForXPath('//*[contains(text(), "Can\'t find account")]', {timeout: 6000}).catch(() => {
-          flagCantFindAccountError = false;
+          // flagCantFindAccountError = false;
         });
 
-      if (flagCantFindAccountError) {
-        return false;
-      }
+      // if (flagCantFindAccountError) {
+      //   return false;
+      // }
     }
 
     return this.page;
