@@ -483,6 +483,13 @@ var facebook = {
             // Proceed with yes
             await browserHelper.page.click('#checkpointSubmitButton-actual-button');
 
+            await browserHelper.waitForNavigation()
+              .catch(() => {
+                if (Env.get('DEBUG_ENABLED') == 'true') {
+                  console.log('No navigation occur. Skip..');
+                }
+              });
+
             if (Env.get('DEBUG_ENABLED') == 'true') {
               console.log('Click yes button');
             }
@@ -490,10 +497,10 @@ var facebook = {
 
           // The code that you entered is incorrect. Please check the code we sent to your email.
 
-          return {
-            'status': 'failed',
-            'reason': 'login_error',
-          }
+          // return {
+          //   'status': 'failed',
+          //   'reason': 'login_error',
+          // }
         }
 
         if (!keepRunning && !facebookVerificationCode) {
