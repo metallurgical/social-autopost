@@ -356,6 +356,17 @@ var facebook = {
         console.log('check code sent to your email address');
       }
 
+      let screenshot = "./screenshot" + Math.random() + ".png";
+
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('Screenshot name: ' + screenshot);
+
+        await browserHelper.page.screenshot({ // Screenshot the website using defined options
+          path: "./screenshot-" + Math.random() + ".png", // Save the screenshot in current directory
+          fullPage: true // take a fullpage screenshot
+        });
+      }
+
       await browserHelper
         .page
         .waitForXPath('//*[contains(text(), "Get a code sent to your email address")]', {timeout: 6000})
