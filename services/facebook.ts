@@ -19,6 +19,10 @@ var facebook = {
     new Promise(res => setTimeout(res, ms))
   },
 
+  randomIntFromInterval(min, max) { // min and max included
+    return Math.floor(Math.random() * (max - min + 1) + min)
+  },
+
   async login({email, password, timeout = 6000}) {
     if (Env.get('DEBUG_ENABLED') == 'true') {
       console.log('Enter check login');
@@ -29,7 +33,8 @@ var facebook = {
     await browserHelper.open('https://m.facebook.com');
 
     // Wait for navigation done
-    await browserHelper.waitForNavigation().catch(() => {});
+    await browserHelper.waitForNavigation().catch(() => {
+    });
 
     if (Env.get('DEBUG_ENABLED') == 'true') {
       let screenshot = "./screenshot-before-login-" + Math.random() + ".png";
@@ -43,14 +48,14 @@ var facebook = {
     }
 
     // Wait for button "Log In" appear
-    await this.delay(3);
+    await this.delay(this.randomIntFromInterval(1, 5));
 
     await browserHelper.focusElement('#m_login_email');
     await browserHelper.clearElement('#m_login_email');
     await browserHelper.sendElementText('#m_login_email', email);
 
     // Wait for few seconds
-    await this.delay(3);
+    await this.delay(this.randomIntFromInterval(1, 5));
 
     await browserHelper.focusElement('#m_login_password');
     await browserHelper.clearElement('#m_login_password');
@@ -59,7 +64,7 @@ var facebook = {
     // Set default navigation
 
     // Wait for few seconds before clicks
-    await this.delay(3);
+    await this.delay(this.randomIntFromInterval(1, 5));
 
     await browserHelper.setDefaultNavigationTimeout(timeout);
     await browserHelper.clickElement("button[name='login']");
