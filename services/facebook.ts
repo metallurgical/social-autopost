@@ -784,7 +784,7 @@ var facebook = {
       await page.waitForNavigation().catch(() => {});
 
       if (Env.get('DEBUG_ENABLED') == 'true') {
-        console.log('Check text: Whats on your mind');
+        console.log('Check text: Write something');
       }
 
       // Make sure 'Write something...' text appear on the page
@@ -822,7 +822,7 @@ var facebook = {
 
       // Click post button
       if (Env.get('DEBUG_ENABLED') == 'true') {
-        console.log('all passed, redirect to profile account')
+        console.log('Try to submit..')
       }
 
       // await Promise.all([
@@ -834,6 +834,10 @@ var facebook = {
         .catch(() => {
           console.log('coundlt find')
         });
+
+      if (Env.get('DEBUG_ENABLED') == 'true') {
+        console.log('Post published..')
+      }
 
       // page.waitForSelector('[data-sigil="inprogress"]', {visible: false}),
       // ]);
